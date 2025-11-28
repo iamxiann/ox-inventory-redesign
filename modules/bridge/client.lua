@@ -63,24 +63,24 @@ function client.hasWorkplace(workplace)
     return false
 end
 
-function client.isOnDuty(jobName)
-    if not PlayerData.loaded then return false end
+-- function client.isOnDuty(jobName)
+--     if not PlayerData.loaded then return false end
 
-    if jobName then
-        if type(jobName) == 'table' then
-            for _, job in ipairs(jobName) do
-                if exports['sandbox-jobs']:DutyGet(job) ~= false then
-                    return true
-                end
-            end
-            return false
-        else
-            return exports['sandbox-jobs']:DutyGet(jobName) ~= false
-        end
-    else
-        return exports['sandbox-jobs']:DutyGet() ~= false
-    end
-end
+--     if jobName then
+--         if type(jobName) == 'table' then
+--             for _, job in ipairs(jobName) do
+--                 if exports['sandbox-jobs']:DutyGet(job) ~= false then
+--                     return true
+--                 end
+--             end
+--             return false
+--         else
+--             return exports['sandbox-jobs']:DutyGet(jobName) ~= false
+--         end
+--     else
+--         return exports['sandbox-jobs']:DutyGet() ~= false
+--     end
+-- end
 
 local Shops = require 'modules.shops.client'
 local Utils = require 'modules.utils.client'
