@@ -45,13 +45,15 @@ end)
 AddEventHandler("ND:moneyChange", function(src, account, amount, changeType, reason)
     if account ~= "cash" then return end
     local item = Inventory.GetItemCount(src, 'money')
-    Inventory.SetItem(src, "money", changeType == "set" and amount or changeType == "remove" and item - amount or changeType == "add" and item + amount)
+    Inventory.SetItem(src, "money",
+        changeType == "set" and amount or changeType == "remove" and item - amount or
+        changeType == "add" and item + amount)
 end)
 
 AddEventHandler("ND:updateCharacter", function(character)
     local inventory = Inventory(character.source)
-	if not inventory then return end
-	inventory.player.groups = reorderGroups(character.groups)
+    if not inventory then return end
+    inventory.player.groups = reorderGroups(character.groups)
 end)
 
 ---@diagnostic disable-next-line: duplicate-set-field
@@ -82,7 +84,7 @@ function server.hasLicense(inv, license)
     if not player then return end
 
     local licenses = player.getMetadata("licenses") or {}
-    for i=1, #licenses do
+    for i = 1, #licenses do
         local characterLicense = licenses[i]
         if characterLicense.type == license and characterLicense.status == "valid" then
             return characterLicense.type
@@ -92,16 +94,16 @@ end
 
 ---@diagnostic disable-next-line: duplicate-set-field
 function server.buyLicense(inv, license)
-	if server.hasLicense(inv, license.name) then
-		return false, "already_have"
-	elseif Inventory.GetItemCount(inv, 'money') < license.price then
-		return false, "can_not_afford"
-	end
+    if server.hasLicense(inv, license.name) then
+        return false, "already_have"
+    elseif Inventory.GetItemCount(inv, 'money') < license.price then
+        return false, "can_not_afford"
+    end
 
-	Inventory.RemoveItem(inv, "money", license.price)
+    Inventory.RemoveItem(inv, "money", license.price)
     local player = NDCore.getPlayer(inv.id)
     player.createLicense("weapon")
-	return true, "have_purchased"
+    return true, "have_purchased"
 end
 
 ---@diagnostic disable-next-line: duplicate-set-field
@@ -110,7 +112,7 @@ function server.isPlayerBoss(playerId, group)
     if not player then return end
 
     local groupInfo = player.getGroup(group)
-	return groupInfo and groupInfo.isBoss
+    return groupInfo and groupInfo.isBoss
 end
 
 ---@param entityId number

@@ -9,75 +9,86 @@ local locations = shared.target and 'targets' or 'locations'
 ---@field slot number
 ---@field weight number
 
+local function getLocationSpecificName(shop, coords, location)
+    if location and location.name then
+        return location.name
+    end
+    return shop.name
+end
+
 local function setupShopItems(id, shopType, shopName, groups)
-	local shop = id and Shops[shopType][id] or Shops[shopType] --[[@as OxShop]]
+    local shop = id and Shops[shopType][id] or Shops[shopType] --[[@as OxShop]]
 
-	for i = 1, shop.slots do
-		local slot = shop.items[i]
+    for i = 1, shop.slots do
+        local slot = shop.items[i]
 
-		if slot.grade and not groups then
-			print(('^1attempted to restrict slot %s (%s) to grade %s, but %s has no job restriction^0'):format(id, slot.name, json.encode(slot.grade), shopName))
-			slot.grade = nil
-		end
+        if slot.grade and not groups then
+            print(('^1attempted to restrict slot %s (%s) to grade %s, but %s has no job restriction^0'):format(id,
+                slot.name, json.encode(slot.grade), shopName))
+            slot.grade = nil
+        end
 
-		local Item = Items(slot.name)
+        local Item = Items(slot.name)
 
-		if Item then
-			---@type OxShopItem
-			slot = {
-				name = Item.name,
-				slot = i,
-				weight = Item.weight,
-				count = slot.count,
-				price = (server.randomprices and (not slot.currency or slot.currency == 'money')) and (math.ceil(slot.price * (math.random(80, 120)/100))) or slot.price or 0,
-				metadata = slot.metadata,
-				license = slot.license,
-				currency = slot.currency,
-				grade = slot.grade
-			}
+        if Item then
+            ---@type OxShopItem
+            slot = {
+                name = Item.name,
+                slot = i,
+                weight = Item.weight,
+                count = slot.count,
+                price = (server.randomprices and (not slot.currency or slot.currency == 'money')) and
+                    (math.ceil(slot.price * (math.random(80, 120) / 100))) or slot.price or 0,
+                metadata = slot.metadata,
+                license = slot.license,
+                qualification = slot.qualification,
+                currency = slot.currency,
+                grade = slot.grade,
+                job = slot.job
+            }
 
-			if slot.metadata then
-				slot.weight = Inventory.SlotWeight(Item, slot, true)
-			end
+            if slot.metadata then
+                slot.weight = Inventory.SlotWeight(Item, slot, true)
+            end
 
-			shop.items[i] = slot
-		end
-	end
+            shop.items[i] = slot
+        end
+    end
 end
 
 ---@param shopType string
 ---@param properties OxShop
 local function registerShopType(shopType, properties)
-	local shopLocations = properties[locations] or properties.locations
+    local shopLocations = properties[locations] or properties.locations
 
-	if shopLocations then
-		Shops[shopType] = properties
-	else
-		Shops[shopType] = {
-			label = properties.name,
-			id = shopType,
-			groups = properties.groups or properties.jobs,
-			items = properties.inventory,
-			slots = #properties.inventory,
-			type = 'shop',
-		}
+    if shopLocations then
+        Shops[shopType] = properties
+    else
+        Shops[shopType] = {
+            label = properties.name,
+            id = shopType,
+            groups = properties.groups or properties.jobs,
+            items = properties.inventory,
+            slots = #properties.inventory,
+            type = 'shop',
+        }
 
-		setupShopItems(nil, shopType, properties.name, properties.groups or properties.jobs)
-	end
+        setupShopItems(nil, shopType, properties.name, properties.groups or properties.jobs)
+    end
 end
 
 ---@param shopType string
 ---@param id number
 local function createShop(shopType, id)
-	local shop = Shops[shopType]
+    local shop = Shops[shopType]
 
-	if not shop then return end
+    if not shop then return end
 
-	local store = (shop[locations] or shop.locations)?[id]
+    local store = (shop[locations] or shop.locations)?[id]
 
-	if not store then return end
+    if not store then return end
 
-	local groups = shop.groups or shop.jobs
+    local groups = shop.groups or shop.jobs
     local coords
 
     if shared.target then
@@ -88,79 +99,117 @@ local function createShop(shopType, id)
             coords = store.coords or store.loc
         end
     else
-        coords = store
+        coords = store.coords or store
     end
 
-	shop[id] = {
-		label = shop.name,
-		id = shopType..' '..id,
-		groups = groups,
-		items = table.clone(shop.inventory),
-		slots = #shop.inventory,
-		type = 'shop',
-		coords = coords,
-		distance = shared.target and shop.targets?[id]?.distance,
-	}
+    local locationName = getLocationSpecificName(shop, coords, store)
 
-	setupShopItems(id, shopType, shop.name, groups)
+    shop[id] = {
+        label = locationName,
+        id = shopType .. ' ' .. id,
+        groups = groups,
+        workplace = shop.workplace,
+        reqDuty = shop.reqDuty,
+        items = table.clone(shop.inventory),
+        slots = #shop.inventory,
+        type = 'shop',
+        coords = coords,
+        distance = shared.target and shop.targets?[id]?.distance,
+    }
 
-	return shop[id]
+    setupShopItems(id, shopType, locationName, groups)
+
+    return shop[id]
 end
 
 for shopType, shopDetails in pairs(lib.load('data.shops') or {}) do
-	registerShopType(shopType, shopDetails)
+    registerShopType(shopType, shopDetails)
 end
 
 ---@param shopType string
 ---@param shopDetails OxShop
 exports('RegisterShop', function(shopType, shopDetails)
-	registerShopType(shopType, shopDetails)
+    registerShopType(shopType, shopDetails)
 end)
 
 lib.callback.register('ox_inventory:openShop', function(source, data)
-	local left, shop = Inventory(source)
+    local left, shop = Inventory(source)
 
-	if not left then return end
+    if not left then return end
 
-	if data then
-		shop = Shops[data.type]
+    if data then
+        shop = Shops[data.type]
 
-		if not shop then return end
+        if not shop then return end
 
-		if not shop.items then
-			shop = (data.id and shop[data.id] or createShop(data.type, data.id))
+        if not shop.items then
+            shop = (data.id and shop[data.id] or createShop(data.type, data.id))
 
-			if not shop then return end
-		end
+            if not shop then return end
+        end
 
-		---@cast shop OxShop
+        ---@cast shop OxShop
 
-		if shop.groups then
-			local group = server.hasGroup(left, shop.groups)
-			if not group then return end
-		end
+        if shop.groups then
+            local group = server.hasGroup(left, shop.groups)
+            if not group then return end
+        end
 
-		if type(shop.coords) == 'vector3' and #(GetEntityCoords(GetPlayerPed(source)) - shop.coords) > 10 then
-			return
-		end
+        if shop.workplace then
+            local workplace = server.hasWorkplace(left, shop.workplace)
+            if not workplace then return end
+        end
 
-		---@diagnostic disable-next-line: assign-type-mismatch
+        if shop.reqDuty then
+            local group = server.hasGroup(left, shop.groups)
+            if group then
+                local onDuty = server.isOnDuty(source, group)
+                if not onDuty then return end
+            end
+        end
 
-		left:openInventory(left)
-		left.currentShop = shop.id
-	end
+        if type(shop.coords) == 'vector3' and #(GetEntityCoords(GetPlayerPed(source)) - shop.coords) > 10 then
+            return
+        end
 
-	return { label = left.label, type = left.type, slots = left.slots, weight = left.weight, maxWeight = left.maxWeight }, shop
+        local playerJobs = {}
+        local playerInv = Inventory(source)
+        if playerInv and playerInv.player and playerInv.player.groups then
+            for jobName, _ in pairs(playerInv.player.groups) do
+                playerJobs[jobName] = true
+            end
+        end
+
+        local filteredShop = table.clone(shop)
+        local filteredItems = {}
+
+        for i = 1, #shop.items do
+            local item = shop.items[i]
+            if item and (not item.job or playerJobs[item.job]) then
+                filteredItems[#filteredItems + 1] = item
+            end
+        end
+
+        filteredShop.items = filteredItems
+        filteredShop.slots = #filteredItems
+
+        ---@diagnostic disable-next-line: assign-type-mismatch
+        left:openInventory(left)
+        left.currentShop = shop.id
+
+        return {
+                label = left.label,
+                type = left.type,
+                slots = left.slots,
+                weight = left.weight,
+                maxWeight = left.maxWeight
+            },
+            filteredShop
+    end
+
+    return { label = left.label, type = left.type, slots = left.slots, weight = left.weight, maxWeight = left.maxWeight },
+        shop
 end)
-
--- local function canAffordItem(inv, currency, price)
--- 	local canAfford = price >= 0 and Inventory.GetItemCount(inv, currency) >= price
-
--- 	return canAfford or {
--- 		type = 'error',
--- 		description = locale('cannot_afford', ('%s%s'):format((currency == 'money' and locale('$') or math.groupdigits(price)), (currency == 'money' and math.groupdigits(price) or ' '..Items(currency).label)))
--- 	}
--- end
 
 local function canAffordItem(inv, currency, price)
     if price < 0 then
@@ -179,8 +228,9 @@ local function canAffordItem(inv, currency, price)
             description = locale('cannot_afford', locale('$') .. math.groupdigits(price))
         }
     elseif currency == 'bank' then
-        local user = exports['limitless-core']:getComponent('User'):GetPlayer(inv.id)
-        if user and user.bank >= price then return true end
+        local canAfford = server.hasBalance(inv.owner, price)
+
+        if canAfford then return true end
 
         return {
             type = 'error',
@@ -190,29 +240,24 @@ local function canAffordItem(inv, currency, price)
 end
 
 local function removeCurrency(inv, currency, amount)
-    if currency == 'money' then
+    if currency == 'cash' then
         Inventory.RemoveItem(inv, 'money', amount)
     elseif currency == 'bank' then
-        local user = exports['limitless-core']:getComponent('User'):GetPlayer(inv.id)
-        if user then
-            user.removeBank(amount)
-        end
+        server.withdrawMoney(inv.owner, amount)
     end
 end
 
-local TriggerEventHooks = require 'modules.hooks.server'
-
 local function isRequiredGrade(grade, rank)
-	if type(grade) == "table" then
-		for i=1, #grade do
-			if grade[i] == rank then
-				return true
-			end
-		end
-		return false
-	else
-		return rank >= grade
-	end
+    if type(grade) == "table" then
+        for i = 1, #grade do
+            if grade[i] == rank then
+                return true
+            end
+        end
+        return false
+    else
+        return rank >= grade
+    end
 end
 
 lib.callback.register('ox_inventory:buyItem', function(source, data)
@@ -266,13 +311,31 @@ lib.callback.register('ox_inventory:buyItem', function(source, data)
 
         totalPrice = totalPrice + price
 
-        table.insert(purchaseList, {
-            fromData = fromData,
-            fromItem = fromItem,
-            metadata = metadata,
-            count = count,
-            price = price
-        })
+        -- Containers having Items.Metadata, it will always set their count to 1.
+        -- This code makes them purchasealbe in quantities greater than 1.
+        local container = Items.containers[fromItem.name]
+        if container and quantity > 1 then
+            for i = 1, quantity do
+                local containerMetadata = table.clone(fromData.metadata and table.clone(fromData.metadata) or {})
+                containerMetadata = Items.Metadata(playerInv, fromItem, containerMetadata, 1)
+                
+                table.insert(purchaseList, {
+                    fromData = fromData,
+                    fromItem = fromItem,
+                    metadata = containerMetadata,
+                    count = 1,
+                    price = item.price or fromData.price
+                })
+            end
+        else
+            table.insert(purchaseList, {
+                fromData = fromData,
+                fromItem = fromItem,
+                metadata = metadata,
+                count = count,
+                price = price
+            })
+        end
     end
 
     local canAfford = canAffordItem(playerInv, method, totalPrice)
@@ -303,7 +366,7 @@ lib.callback.register('ox_inventory:buyItem', function(source, data)
         lib.logger(playerInv.owner, 'buyItem', ('"%s" bought %d items for %s'):format(playerInv.label, #purchaseList, totalPrice), ('shop:%s'):format(shop.label))
     end
 
-    return true, { playerInv.items, playerInv.weight }, { type = 'success', description = message }
+    return true, { playerInv.items, playerInv.weight }, { type = 'success', description = "Successflly purchased items." }
 end)
 
 server.shops = Shops
