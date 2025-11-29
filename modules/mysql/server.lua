@@ -194,7 +194,7 @@ function db.saveInventories(players, trunks, gloveboxes, stashes, total)
     local saveStr = 'Saved %d/%d %s (%.4f ms)'
     local pending = 0
 
-    exports['sandbox-base']:LoggerInfo("Inventory", ('Saving %s inventories to the database'):format(total[5]))
+    shared.info(('Saving %s inventories to the database'):format(total[5]))
 
     if total[1] > 0 then
         pending += 1
@@ -204,8 +204,7 @@ function db.saveInventories(players, trunks, gloveboxes, stashes, total)
             pending -= 1
 
             if resp then
-                exports['sandbox-base']:LoggerInfo("Inventory",
-                    saveStr:format(countRows(resp), total[1], 'players', (os.nanotime() - start) / 1e6))
+                shared.info(saveStr:format(countRows(resp), total[1], 'players', (os.nanotime() - start) / 1e6))
             end
         end)
     end
@@ -218,8 +217,7 @@ function db.saveInventories(players, trunks, gloveboxes, stashes, total)
             pending -= 1
 
             if resp then
-                exports['sandbox-base']:LoggerInfo("Inventory",
-                    saveStr:format(countRows(resp), total[2], 'trunks', (os.nanotime() - start) / 1e6))
+                shared.info(saveStr:format(countRows(resp), total[2], 'trunks', (os.nanotime() - start) / 1e6))
             end
         end)
     end
@@ -232,8 +230,7 @@ function db.saveInventories(players, trunks, gloveboxes, stashes, total)
             pending -= 1
 
             if resp then
-                exports['sandbox-base']:LoggerInfo("Inventory",
-                    saveStr:format(countRows(resp), total[3], 'gloveboxes', (os.nanotime() - start) / 1e6))
+                shared.info(saveStr:format(countRows(resp), total[3], 'gloveboxes', (os.nanotime() - start) / 1e6))
             end
         end)
     end
@@ -258,8 +255,7 @@ function db.saveInventories(players, trunks, gloveboxes, stashes, total)
                         affectedRows -= tonumber(resp.info:match('Duplicates: (%d+)'), 10) or 0
                     end
 
-                    exports['sandbox-base']:LoggerInfo("Inventory",
-                        saveStr:format(affectedRows, total[4], 'stashes', (os.nanotime() - start) / 1e6))
+                    shared.info(saveStr:format(affectedRows, total[4], 'stashes', (os.nanotime() - start) / 1e6))
                 end
             end)
         else
@@ -278,8 +274,7 @@ function db.saveInventories(players, trunks, gloveboxes, stashes, total)
                         end
                     end
 
-                    exports['sandbox-base']:LoggerInfo("Inventory",
-                        saveStr:format(affectedRows, total[4], 'stashes', (os.nanotime() - start) / 1e6))
+                    shared.info(saveStr:format(affectedRows, total[4], 'stashes', (os.nanotime() - start) / 1e6))
                 end
             end)
         end
