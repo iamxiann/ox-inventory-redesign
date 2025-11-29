@@ -7,7 +7,7 @@ return {
 				name = 'lockpick',
 				ingredients = {
 					scrapmetal = 5,
-					WEAPON_HAMMER = 0.05
+					WEAPON_HAMMER = 1 -- Don't be stupid, how the fuck is something supposed to be removed if the value is 0.05???
 				},
 				duration = 5000,
 				count = 2,
