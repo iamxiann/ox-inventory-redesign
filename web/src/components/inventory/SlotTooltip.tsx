@@ -171,7 +171,7 @@ const SlotTooltip: React.ForwardRefRenderFunction<
                 {item.durability !== undefined && (
                   <div className="tooltip-durability">
                     <p>Durability:</p>
-                    <a>{item.durability}%</a>
+                    <a>{Math.floor(item.durability)}%</a>
                   </div>
                 )}
                 {item.metadata?.ammo !== undefined && (
