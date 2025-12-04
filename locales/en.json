@@ -23,6 +23,7 @@
   "male": "Male",
   "female": "Female",
   "used": "Used",
+   "ui_used": "Used",
   "ui_removed": "Removed",
   "ui_added": "Added",
   "ui_holstered": "Holstered",
