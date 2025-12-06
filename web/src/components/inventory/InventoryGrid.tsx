@@ -8,7 +8,6 @@ import { useIntersection } from '../../hooks/useIntersection';
 import { toAsciiLower } from '../../utils/string';
 
 const PAGE_SIZE = 30;
-const MAX_SHOP_SLOTS = 8;
 
 interface InventoryGridProps {
   inventory: Inventory;
@@ -62,19 +61,17 @@ const InventoryGrid: React.FC<InventoryGridProps> = ({
   }, [entry]);
 
   const renderedItems = itemsOverride ?? inventory.items;
-
+  
   const slotsToShow = useMemo(() => {
-    const baseItems = renderedItems;
-    if (inventory.type === InventoryType.SHOP) {
-      return baseItems.slice(0, MAX_SHOP_SLOTS);
-    }
-    return baseItems;
-  }, [renderedItems, inventory.type]);
+    return renderedItems;
+  }, [renderedItems]);
 
-  const paginatedItems = slotsToShow.slice(
-    0,
-    Math.min((page + 1) * PAGE_SIZE, slotsToShow.length)
-  );
+  const paginatedItems = useMemo(() => {
+    if (inventory.type === InventoryType.SHOP) {
+      return slotsToShow;
+    }
+    return slotsToShow.slice(9, Math.min((page + 1) * PAGE_SIZE, slotsToShow.length));
+  }, [slotsToShow, inventory.type, page]);
 
   const normalizedQuery = toAsciiLower(searchQuery);
 
