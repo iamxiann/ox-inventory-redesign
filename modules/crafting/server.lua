@@ -11,9 +11,10 @@ local Inventory = require 'modules.inventory.server'
 local function createCraftingBench(id, data)
     CraftingBenches[id] = {}
     local recipes = data.items
+	local amount = recipes and #recipes or 0
 
-    if recipes then
-        for i = 1, #recipes do
+    if amount > 0 then
+		for i = 1, amount do
             local recipe = recipes[i]
             local item = Items(recipe.name)
 
@@ -52,7 +53,8 @@ local function createCraftingBench(id, data)
                 maxWeight = data.inventory.maxWeight or 25000,
             }
         -- end
-
+		data.slots = amount
+		
         CraftingBenches[id] = data
     end
 end
@@ -281,7 +283,7 @@ lib.callback.register('ox_inventory:craftItem', function(source, id, index, reci
                 return false
             end
 
-            local success = lib.callback.await('ox_inventory:startCrafting', source, id, recipeId)
+            local success = lib.callback.await('ox_inventory:startCrafting', source, recipe)
 
             if success then
                 for name, needs in pairs(recipe.ingredients) do
