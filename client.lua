@@ -2008,7 +2008,7 @@ RegisterNUICallback('exit', function(_, cb)
     cb(1)
 end)
 
-lib.callback.register('ox_inventory:startCrafting', function(id, recipe)
+lib.callback.register('ox_inventory:startCrafting', function(recipe)
     recipe = CraftingBenches[id].items[recipe]
 
     return lib.progressCircle({
@@ -2022,7 +2022,8 @@ lib.callback.register('ox_inventory:startCrafting', function(id, recipe)
         anim = {
             dict = 'anim@amb@clubhouse@tutorial@bkr_tut_ig3@',
             clip = 'machinic_loop_mechandplayer',
-        }
+        },
+		prop = recipe.prop or {}
     })
 end)
 
